@@ -1,4 +1,4 @@
 AntWorld
 ========
 
-** TODO: Add description **
+Un mini projet sans ambition qui vis à jouer avec Elixir.
