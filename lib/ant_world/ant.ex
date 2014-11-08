@@ -1,24 +1,31 @@
-defmodule Ant do
+defmodule Ant_world.Ant do
+
   @home {0,0}
 
-  def live(bag) do
+  def loop(bag \\ []) do
     receive do
       { sender, :birth, {x,y} } -> # first snorting
-        send sender, { self, :snort, next_pos({x,y}), Enum.count(bag) }
-        live(bag)
+        {nx, ny} = next_pos({x,y})
+        IO.puts "ANT: I'm alive, and going to #{nx}, #{ny}"
+        # IO.puts "ANT: I'm alive, and going to #{IO.inspect({x,y})}"
+        send sender, { self, :snort,{nx, ny} , Enum.count(bag) }
+        loop(bag)
 
       { sender, :smell, {x,y}, :grass } -> # smell like grass, ain't junky so go on
+        IO.puts "ANT: Smell like grass #{x}, #{y}"
         {x1,y1} = next_pos({x,y})
         send sender, {self, :snort, {x1,y1}, Enum.count(bag)}
-        live(bag)
+        loop(bag)
 
       { sender, :smell, {x,y}, :food, _quantity } -> # takeOne,  goHome,  markPath
+        IO.puts "ANT: smell food"
         send sender, {self, :walk, next_pos_to_home({x,y}), Enum.count(bag)}
-        live([1|bag])
+        loop([1|bag])
 
       {sender, :ok, {x,y}} ->
+        IO.puts "ANT: walking"
         send sender, {self, :walk, next_pos_to_home({x,y}), Enum.count(bag)}
-        live(bag)
+        loop(bag)
     # { sender, :smell, {x,y}, :path  } -> moveOn, snort
     end
   end
