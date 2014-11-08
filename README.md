@@ -16,6 +16,11 @@ Une fois qu'une fourmi à trouver une source de nourriture, elle peux laisser un
 Les traces laissé par les fourmit s'accumule avec le temps.
 Une fourmi en recherche de de nourriture va suivre la piste qui sens le plus fort.
 
+Run?
+--------
+$ iex -S mix
+iex(1)> AntWorld.run
+
 État courrant
 -----------------
 
@@ -31,3 +36,4 @@ Futur
 * Je veux être capable de controller les différent processus avec OTP.
 * Je veux être capable de voir de belle manière ce qui se passe dans le monde. Surement avec un autre process qui redessinera la carte à chaque dessin.
 * Je veux que les fourmi puisse laisser des traces de leur passage.
+* Je veux être capable de partir des instance de fourmi sur un réseau
