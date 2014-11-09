@@ -1,34 +1,45 @@
 defmodule Ant_world.Ant do
-
   @home {0,0}
 
-  def loop(bag \\ []) do
-    receive do
-      { sender, :birth, {x,y} } -> # first snorting
-        {nx, ny} = next_pos({x,y})
-        IO.puts "ANT: I'm alive, and going to #{nx}, #{ny}"
-        # IO.puts "ANT: I'm alive, and going to #{IO.inspect({x,y})}"
-        send sender, { self, :snort,{nx, ny} , Enum.count(bag) }
-        loop(bag)
-
-      { sender, :smell, {x,y}, :grass } -> # smell like grass, ain't junky so go on
-        IO.puts "ANT: Smell like grass #{x}, #{y}"
-        {x1,y1} = next_pos({x,y})
-        send sender, {self, :snort, {x1,y1}, Enum.count(bag)}
-        loop(bag)
-
-      { sender, :smell, {x,y}, :food, _quantity } -> # takeOne,  goHome,  markPath
-        IO.puts "ANT: smell food"
-        send sender, {self, :walk, next_pos_to_home({x,y}), Enum.count(bag)}
-        loop([1|bag])
-
-      {sender, :ok, {x,y}} ->
-        IO.puts "ANT: walking"
-        send sender, {self, :walk, next_pos_to_home({x,y}), Enum.count(bag)}
-        loop(bag)
-    # { sender, :smell, {x,y}, :path  } -> moveOn, snort
-    end
+  def init( world_pid ,bag\\[]) do
+    IO.puts "ANT: I'm alive"
+    snort_else_where({0,0}, {world_pid, bag})
   end
+
+  # def loop({world_pid, bag}, resp) do
+  #   receive do
+  #     {:smell, {x,y}, :grass}           -> snort_else_where({x,y}, {world_pid, bag})
+  #     {:smell, {x,y}, :food, _quantity} -> go_home_with_one({x,y}, {world_pid, bag})
+  #     {:ok, {x,y} }                     -> go_home {x,y}, {world_pid, bag}
+  #   end
+  # end
+
+  def loop({world_pid, bag}, {:smell, {x,y}, :grass}) do
+    snort_else_where({x,y}, {world_pid, bag})
+  end
+  def loop({world_pid, bag},  {:smell, {x,y}, :food, _quantity})   do
+    go_home_with_one({x,y}, {world_pid, bag})
+  end
+  def loop({world_pid, bag}, {:ok, {x,y} } ) do
+    go_home {x,y}, {world_pid, bag}
+  end
+
+  def snort_else_where({x,y}, {world_pid, bag}) do
+    IO.puts "snorting else where"
+    resp = GenServer.call world_pid, {:snort, next_pos({x,y}), Enum.count(bag)}
+    loop {world_pid, bag}, resp
+  end
+  def go_home_with_one({x,y}, {world_pid, bag}) do
+    IO.puts "go home with something"
+    new_bag = [ 1 | bag]
+    go_home {x,y}, {world_pid, new_bag}
+  end
+  def go_home({x,y}, {world_pid, bag}) do
+    IO.puts "go home"
+    resp = GenServer.call world_pid, {:walk, next_pos_to_home({x,y}), Enum.count(bag)}
+    loop {world_pid,bag}, resp
+  end
+
 
   def moves({x,y}) do
     [ { x+1,y   },

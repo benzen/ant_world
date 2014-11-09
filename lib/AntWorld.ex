@@ -2,8 +2,8 @@ defmodule AntWorld do
   require Ant_world.World
 
   def main() do
-    pid = spawn( Ant_world.World, :loop, [])
-    send pid, {:init, random_food_position()}
+    {:ok, world_pid} = GenServer.start_link(Ant_world.World, [random_food_position()])
+    Ant_world.Ant.init(world_pid)
 
   end
 
