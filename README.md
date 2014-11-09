@@ -19,7 +19,7 @@ Une fourmi en recherche de de nourriture va suivre la piste qui sens le plus for
 Run?
 --------
 $ iex -S mix
-iex(1)> AntWorld.run
+iex(1)> AntWorld.main()
 
 État courrant
 -----------------
