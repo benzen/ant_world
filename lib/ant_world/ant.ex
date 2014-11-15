@@ -3,39 +3,27 @@ defmodule AntWorld.Ant do
   def start_link(worldPid) do
     dimension = AntWorld.World.get_dimension()
     anthill = AntWorld.World.anthill()
-    ctx = %{world: worldPid, dimension: dimension, anthill: anthill, position: anthill, bag: [], }
-    {:ok, antPid} = Agent.start_link( fn -> ctx end)
-    IO.puts "Inside ant launcher #{inspect(self)}"
-    Agent.update( antPid, &( snort_else_where(&1, anthill) ))
-
-    antPid
+    ctx = %{world: worldPid, dimension: dimension, anthill: anthill, position: anthill, bag: []}
+    spawn_link( fn -> loop ctx end)
   end
 
-  def loop do
+  defp loop(ctx) do
+    position =  ctx.position
     receive do
-      {:meat}  -> AntWorld.Ant.go_home_with_one Agent.get self, &(&1.position)
-      {:grass} -> AntWorld.Ant.snort_else_where Agent.get self, &(&1.position)
-      {:ok}    -> AntWorld.Ant.go_home Agent.get self, &(&1.position)
+      :meat  -> AntWorld.Ant.go_home_with_one ctx, position
+      :grass -> AntWorld.Ant.snort_else_where ctx, position
+      :ok    -> AntWorld.Ant.go_home ctx, position
+      {:status, cb}->
+        cb.( nil, position)
+        loop(ctx)
       end
   end
-  #
-  # def loop(ctx, {:smell, {x,y}, :grass}) do
-  #   snort_else_where({x,y}, ctx)
-  # end
-  # def loop(ctx,  {:smell, {x,y}, :food, _quantity})   do
-  #   go_home_with_one({x,y}, ctx)
-  # end
-  # def loop(ctx, {:ok, {x,y} } ) do
-  #   go_home {x,y}, ctx
-  # end
 
   def snort_else_where(ctx, {x,y}) do
     np = next_pos(ctx, {x,y})
-    IO.puts "snort else where #{inspect(ctx.world)}"
-    IO.puts "ant #{inspect(self)}"
     GenServer.cast ctx.world, {:snort, np, self}
     Dict.put ctx, :position, np
-    loop()
+    loop(ctx)
   end
 
   def go_home_with_one(ctx, {x,y}) do
@@ -46,7 +34,7 @@ defmodule AntWorld.Ant do
     np = next_pos_to_home ctx, {x,y}
     GenServer.cast ctx.world, {:walk, np, self}
     Dict.put ctx, :position, np
-    loop()
+    loop(ctx)
   end
 
 

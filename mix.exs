@@ -15,7 +15,7 @@ defmodule AntWorld.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [mod: {AntWorld, []},
-     applications: [:poison, :cauldron, :logger]]
+     applications: [:cauldron, :logger]]
   end
 
   # Specifies your project dependencies
@@ -24,7 +24,7 @@ defmodule AntWorld.Mixfile do
   defp deps do
     [
       {:cauldron, "0.1.5"},
-      {:poison, "1.2.0"}
+      {:json,   "~> 0.3.0"}
     ]
   end
 end
