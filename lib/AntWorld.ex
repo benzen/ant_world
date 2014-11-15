@@ -46,6 +46,15 @@ defmodule Presenter do
     build_ant_response id, cb
   end
 
+  def handle("GET", %URI{path: "/"}, req) do
+    html = """
+    <body>
+      <p>BOOYA<p>
+    </body>
+    """
+    req |> Request.reply(200, html )
+  end
+
   def build_map_status_response() do
     {world,_ants} = Agent.get :pids, &(&1)
     world_state = GenServer.call world, :state
