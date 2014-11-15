@@ -1,52 +1,53 @@
-defmodule Ant_world.World do
+defmodule AntWorld.World do
 
   use GenServer
 
-  @home {0,0}
-
-#   ###Public API
-#   def start_link(food_position) do
-#     GenServer.start_link(__MODULE__, food_position, name: __MODULE__)
-#   end
-#
-#   def walk(position, nb_food_carried) do
-#     GenServer.call __MODULE__, {:walk, position, nb_food_carried}
-#   end
-#
-#   def snort(position, nb_food_carried) do
-#     GenServer.call __MODULE__, {:snort, position, nb_food_carried}
-#   end
-#
-# ### Private API
-
-  def init( food_position ) do
-    IO.puts "que le monde soit #{inspect(food_position)}"
-    {:ok, food_position}
+  def start_link(_width, _height, food_position) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, [food_position] )
+    pid
   end
 
-  def handle_call({:walk, {x,y}, 1}, _sender, food_position) when {x,y} == @home do
-     IO.puts "Rest In Peace" # no call to loop
-     {:noreply, food_position}
+  # def get_state() do
+  #   GenServer.call(__MODULE__, :state)
+  # end
+
+  def get_dimension() do
+    {1000, 1000}
   end
 
-  def handle_call({:walk, {x,y}, _}, _sender, food_position) do
-      IO.puts "WORLD: walked"
-      {:reply, {:ok, {x,y}}, food_position}
+  def anthill() do #same as @home
+    {0,0}
   end
 
-  def handle_call({:snort, {x,y}, 0}, _sender, food_position) when {x,y} == @home do
-    IO.puts "Got home but will continue to search"
-    {:reply, {:smell, {x,y}, :grass}, food_position}
+  def handle_call(:state, _sender, food_position) do
+    resp = %{
+      dimension: get_dimension(),
+      food: food_position,
+      anthill: anthill()
+    }
+    {:reply, resp, food_position}
   end
 
-  def handle_call({:snort, {x,y}, _count_in_bag}, _sender, food_position) do
-    IO.puts "WORLD: snorted #{x},#{y}"
+  def handle_cast({:walk, {_x,_y}, sender}, food_position) do
+      send sender, :ok
+      {:noreply ,food_position}
+  end
+
+  def handle_cast({:snort, {x,y}, sender}, food_position) do
     if Enum.member? food_position, {x,y} do
-        IO.puts "WORLD: is on foods"
-        {:reply, {:smell, {x,y}, :food, 1}, List.delete( food_position, {x,y} ) }
+        send sender, :food
+        new_food_position = List.delete food_position, {x,y}
+        {:noreply, new_food_position }
     else
-        IO.puts "WORLD: is on Grass"
-        {:reply, {:smell, {x,y}, :grass}, food_position }
+        send sender, :grass
+        {:noreply, food_position }
     end
   end
+
+  def handle_cast(_,ctx)do
+
+    IO.puts "Un handeled messges"
+    {:noreply,ctx}
+  end
+
 end

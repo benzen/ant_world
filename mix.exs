@@ -5,6 +5,8 @@ defmodule AntWorld.Mixfile do
     [app: :ant_world,
      version: "0.0.1",
      elixir: "~> 1.0",
+     elixirc_paths: ["lib"],
+     compilers: Mix.compilers,
      deps: deps]
   end
 
@@ -12,19 +14,17 @@ defmodule AntWorld.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger]]
+    [mod: {AntWorld, []},
+     applications: [:poison, :cauldron, :logger]]
   end
 
-  # Dependencies can be Hex packages:
+  # Specifies your project dependencies
   #
-  #   {:mydep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
-  #
-  # Type `mix help deps` for more examples and options
+  # Type `mix help deps` for examples and options
   defp deps do
-    []
+    [
+      {:cauldron, "0.1.5"},
+      {:poison, "1.2.0"}
+    ]
   end
 end

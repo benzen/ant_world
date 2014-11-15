@@ -1,0 +1,6 @@
+%{"cauldron": {:hex, :cauldron, "0.1.5"},
+  "exts": {:hex, :exts, "0.2.2"},
+  "httprot": {:hex, :httprot, "0.1.5"},
+  "poison": {:hex, :poison, "1.2.0"},
+  "reagent": {:hex, :reagent, "0.1.5"},
+  "socket": {:hex, :socket, "0.2.8"}}
