@@ -59,32 +59,29 @@ defmodule Presenter do
 
             var drawCell = function(content, x,y){
               var id = x+'-'+y
-              //var cell = document.createElement("div");
-              //cell.style = "position:absolute; top:" + x*width + ";left:"+ y*height+";width:"+width+";height:"+height
-              //cell.innerText = content;
-              //document.getElementsByTagName("body")[0].appendChild(cell);
-              var container = $('<div id='+id+'></div>')
+              var container = $('<div id='+id+'>')
                               .width(width)
                               .height(height)
                               .css("backgroundColor","green")
-              $('body').append(container)
-              container.offset({top:x*width, left:y*height})
-
+                              .offset({top:x*width, left:y*height})
+                              .css("position", "absolute")
+              return container;
             }
             $.ajax('/status/map', {success:function(data, status){
               var mapWidth = data.dimension[0];
               var mapHeight = data.dimension[1];
               var columns = _.range(data.dimension[0]);
               var rows = _.range(data.dimension[1]);
+
               _.each(rows, function(row){
-                  _.each(columns, function(column){
-                    _.defer(drawCell, 'G', row, column);
+                  return _.map(columns, function(column){
+                    return drawCell( 'G', row, column);
                   });
+                  $('body').append(buffer);
+                  console.log("processed line", row);
               });
 
-              console.log( data);
             }});
-            // drawCell('A', [0,1]);
           });
         </script>
         <p>BOOYA<p>
