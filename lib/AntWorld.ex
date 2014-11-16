@@ -1,11 +1,6 @@
 defmodule AntWorld do
 
   def start(_,_) do
-    # port = 4000
-    # IO.puts "creating the world"
-    # AntWorld.Bootstrap.world_of_ants(1000, 1000, 15)
-    # Cauldron.start AntWorld, port: port
-
     ctx = AntWorld.Bootstrap.world_of_ants(1_000,1_000,15)
     {:ok, pid} = Agent.start_link fn -> ctx end, name: :pids
     IO.puts "created Agent #{inspect pid}"
@@ -23,7 +18,9 @@ defmodule Presenter do
   # a map of property that define the world status
   def handle("GET", %URI{path: "/status/map"}, req) do
     {:ok, resp} = build_map_status_response()
-    req |> Request.reply(200, resp )
+    headers = HTTProt.Headers.new()
+    |> HTTProt.Headers.put("content-type","application/json")
+    req |> Request.reply(200, headers, resp )
   end
 
   # list of ants
@@ -48,11 +45,56 @@ defmodule Presenter do
 
   def handle("GET", %URI{path: "/"}, req) do
     html = """
-    <body>
-      <p>BOOYA<p>
-    </body>
+    <html>
+      <head>
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js" ></script>
+      <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.js" ></script>
+
+      </head>
+      <body>
+        <script type="text/javascript">
+          $(document).ready(function(){
+            var height = 10;
+            var width  = 10;
+
+            var drawCell = function(content, x,y){
+              var id = x+'-'+y
+              //var cell = document.createElement("div");
+              //cell.style = "position:absolute; top:" + x*width + ";left:"+ y*height+";width:"+width+";height:"+height
+              //cell.innerText = content;
+              //document.getElementsByTagName("body")[0].appendChild(cell);
+              var container = $('<div id='+id+'></div>')
+                              .width(width)
+                              .height(height)
+                              .css("backgroundColor","green")
+              $('body').append(container)
+              container.offset({top:x*width, left:y*height})
+
+            }
+            $.ajax('/status/map', {success:function(data, status){
+              var mapWidth = data.dimension[0];
+              var mapHeight = data.dimension[1];
+              var columns = _.range(data.dimension[0]);
+              var rows = _.range(data.dimension[1]);
+              _.each(rows, function(row){
+                  _.each(columns, function(column){
+                    _.defer(drawCell, 'G', row, column);
+                  });
+              });
+
+              console.log( data);
+            }});
+            // drawCell('A', [0,1]);
+          });
+        </script>
+        <p>BOOYA<p>
+      </body>
+    </html>
     """
     req |> Request.reply(200, html )
+  end
+  def handle("GET", %URI{path: _}, req) do
+    req |> Request.reply(404, "ayn't got that" )
   end
 
   def build_map_status_response() do
