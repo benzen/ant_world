@@ -49,46 +49,72 @@ defmodule Presenter do
       <head>
       <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js" ></script>
       <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.js" ></script>
+      <script type="text/javascript">
+        $(document).ready(function(){
+          var cellSize = 10;
+          $.ajax('/status/map', {success:function(data, status){
+            var mapWidth = data.dimension[0];
+            var mapHeight = data.dimension[1];
+            var canvas = $('<canvas>')
+            .attr("width",mapWidth)
+            .attr("height",mapHeight)
+            .appendTo('body')
+            [0];
+            var ctx = canvas.getContext("2d");
 
+            //background
+            ctx.fillStyle = "#339933";
+            ctx.fillRect(0,0,mapWidth*cellSize, mapHeight*cellSize);
+
+            //anthill
+            ctx.fillStyle = "#895a29";
+            ctx.fillRect(0,0,cellSize, cellSize);
+
+            //food
+            ctx.fillStyle = "#f14952";
+            _.each(data.food[0], function(food){
+              var x = food[0];
+              var y = food[1];
+              ctx.fillRect(x, y, cellSize, cellSize);
+            });
+
+            $.ajax('/ants', {success:function(data, status){
+              _.each(data, function(antId){
+                  $.ajax('/status/ant/'+antId, { success:function(data, status){
+                    ctx.fillStyle = "#000000";
+                    console.log(data);
+                    ctx.fillRect(0,0,cellSize, cellSize);
+                  } } );
+              });
+            } } );
+          }});
+        });
+      </script>
       </head>
       <body>
-        <script type="text/javascript">
-          $(document).ready(function(){
-            var height = 10;
-            var width  = 10;
-
-            var drawCell = function(content, x,y){
-              var id = x+'-'+y
-              var container = $('<div id='+id+'>')
-                              .width(width)
-                              .height(height)
-                              .css("backgroundColor","green")
-                              .offset({top:x*width, left:y*height})
-                              .css("position", "absolute")
-              return container;
-            }
-            $.ajax('/status/map', {success:function(data, status){
-              var mapWidth = data.dimension[0];
-              var mapHeight = data.dimension[1];
-              var columns = _.range(data.dimension[0]);
-              var rows = _.range(data.dimension[1]);
-
-              _.each(rows, function(row){
-                  return _.map(columns, function(column){
-                    return drawCell( 'G', row, column);
-                  });
-                  $('body').append(buffer);
-                  console.log("processed line", row);
-              });
-
-            }});
-          });
-        </script>
-        <p>BOOYA<p>
       </body>
     </html>
     """
     req |> Request.reply(200, html )
+  end
+  def handle("GET", %URI{path: "/worker.js"}, req) do
+    headers = HTTProt.Headers.new()
+    |> HTTProt.Headers.put("content-type","application/javascript")
+    worker = """
+    importScripts('//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.js');
+    onmessage = function(message){
+      var columns = _.range(message.data.column);
+      var rows = _.range(message.data.row);
+      _.each(rows, function(row){
+        _.each(columns, function(column){
+          postMessage([row, column]);
+        });
+      });
+    }
+
+
+    """
+    req |> Request.reply(200, headers, worker )
   end
   def handle("GET", %URI{path: _}, req) do
     req |> Request.reply(404, "ayn't got that" )
