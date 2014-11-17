@@ -22,19 +22,20 @@ defmodule AntWorld.Ant do
   def snort_else_where(ctx, {x,y}) do
     np = next_pos(ctx, {x,y})
     GenServer.cast ctx.world, {:snort, np, self}
-    Dict.put ctx, :position, np
-    loop(ctx)
+    nctx = Dict.put ctx, :position, np
+    loop(nctx)
   end
 
   def go_home_with_one(ctx, {x,y}) do
+    IO.puts "FOOOOOOOD"
     n_ctx = Dict.put ctx, :bag, [1|ctx.bag]
     go_home n_ctx, {x,y}
   end
   def go_home(ctx, {x,y}) do
     np = next_pos_to_home ctx, {x,y}
     GenServer.cast ctx.world, {:walk, np, self}
-    Dict.put ctx, :position, np
-    loop(ctx)
+    nctx = Dict.put ctx, :position, np
+    loop(nctx)
   end
 
 

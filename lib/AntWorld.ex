@@ -26,7 +26,9 @@ defmodule Presenter do
   # list of ants
   def handle("GET", %URI{path: "/ants"}, req) do
     {:ok,json} = build_ants_response()
-    req |> Request.reply(200, json )
+    headers = HTTProt.Headers.new()
+    |> HTTProt.Headers.put("content-type","application/json")
+    req |> Request.reply(200, headers, json )
   end
 
   def handle("GET", %URI{path: "/status/ant/"<> id_as_string }, req) do
@@ -36,7 +38,9 @@ defmodule Presenter do
         req |> Request.reply(500, "oups" )
       else
         {:ok, json } = JSON.encode(ant_status)
-        req |> Request.reply(200, json )
+        headers = HTTProt.Headers.new()
+        |> HTTProt.Headers.put("content-type","application/json")
+        req |> Request.reply(200, headers, json )
       end
     end
     {id, _} = Integer.parse(id_as_string)
@@ -47,11 +51,22 @@ defmodule Presenter do
     html = """
     <html>
       <head>
-      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js" ></script>
-      <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.js" ></script>
+      <script type="text/javascript" src="js/jquery.js" ></script>
+      <script type="text/javascript" src="js/lodash.js" ></script>
       <script type="text/javascript">
+      var cellSize = 10;
+      var drawAnts = function(ctx){
+        $.ajax('/ants', {success:function(data, status){
+          _.each(data, function(antId){
+              $.ajax('/status/ant/'+antId, { success:function(data, status){
+                ctx.fillStyle = "#000000";
+                console.log(data);
+                ctx.fillRect(data[0],data[1],cellSize, cellSize);
+              }});
+            });
+          }});
+        }
         $(document).ready(function(){
-          var cellSize = 10;
           $.ajax('/status/map', {success:function(data, status){
             var mapWidth = data.dimension[0];
             var mapHeight = data.dimension[1];
@@ -77,16 +92,8 @@ defmodule Presenter do
               var y = food[1];
               ctx.fillRect(x, y, cellSize, cellSize);
             });
+            setInterval(function(){drawAnts(ctx)}, 100);
 
-            $.ajax('/ants', {success:function(data, status){
-              _.each(data, function(antId){
-                  $.ajax('/status/ant/'+antId, { success:function(data, status){
-                    ctx.fillStyle = "#000000";
-                    console.log(data);
-                    ctx.fillRect(0,0,cellSize, cellSize);
-                  } } );
-              });
-            } } );
           }});
         });
       </script>
@@ -97,24 +104,24 @@ defmodule Presenter do
     """
     req |> Request.reply(200, html )
   end
-  def handle("GET", %URI{path: "/worker.js"}, req) do
+  # def handle("GET", %URI{path: "/js/jquery.js"}, req) do
+  #   headers = HTTProt.Headers.new()
+  #   |> HTTProt.Headers.put("content-type","application/javascript")
+  #   req |> Request.reply(200, headers,File.open!("./js/jquery.js") )
+  # end
+  def handle("GET", %URI{path: "/js/jquery.js"}, req) do
     headers = HTTProt.Headers.new()
     |> HTTProt.Headers.put("content-type","application/javascript")
-    worker = """
-    importScripts('//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.compat.js');
-    onmessage = function(message){
-      var columns = _.range(message.data.column);
-      var rows = _.range(message.data.row);
-      _.each(rows, function(row){
-        _.each(columns, function(column){
-          postMessage([row, column]);
-        });
-      });
-    }
-
-
-    """
-    req |> Request.reply(200, headers, worker )
+    File.open "js/jquery.js",[:read], fn(file) ->
+      req |> Request.reply(200, headers, IO.read(file, :all))
+    end
+  end
+  def handle("GET", %URI{path: "/js/lodash.js"}, req) do
+    headers = HTTProt.Headers.new()
+    |> HTTProt.Headers.put("content-type","application/javascript")
+    File.open "js/lodash.js",[:read], fn(file) ->
+      req |> Request.reply(200, headers, IO.read(file, :all))
+    end
   end
   def handle("GET", %URI{path: _}, req) do
     req |> Request.reply(404, "ayn't got that" )
@@ -135,7 +142,6 @@ defmodule Presenter do
 
   def build_ant_response(ant_index, cb) do
     {_world,ants} = Agent.get :pids, &(&1)
-    Enum.fetch( ants, (ant_index - 1))
     {:ok, ant} = Enum.fetch( ants, (ant_index - 1))
     send ant, {:status, cb}
   end
