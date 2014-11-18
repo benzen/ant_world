@@ -10,7 +10,7 @@ defmodule AntWorld.Ant do
   defp loop(ctx) do
     position =  ctx.position
     receive do
-      :meat  -> AntWorld.Ant.go_home_with_one ctx, position
+      :food  -> AntWorld.Ant.go_home_with_one ctx, position
       :grass -> AntWorld.Ant.snort_else_where ctx, position
       :ok    -> AntWorld.Ant.go_home ctx, position
       {:status, cb}->
