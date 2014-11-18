@@ -1,10 +1,8 @@
 defmodule AntWorld do
 
   def start(_,_) do
-    ctx = AntWorld.Bootstrap.world_of_ants(1_000,1_000,15)
+    ctx = AntWorld.Bootstrap.world_of_ants(1_000,1_000,10)
     {:ok, pid} = Agent.start_link fn -> ctx end, name: :pids
-    IO.puts "created Agent #{inspect pid}"
-
     Cauldron.start Presenter, port: 4000
     {:ok, self}
   end
@@ -48,78 +46,18 @@ defmodule Presenter do
   end
 
   def handle("GET", %URI{path: "/"}, req) do
-    html = """
-    <html>
-      <head>
-      <script type="text/javascript" src="js/jquery.js" ></script>
-      <script type="text/javascript" src="js/lodash.js" ></script>
-      <script type="text/javascript">
-      var cellSize = 10;
-      var drawAnts = function(ctx){
-        $.ajax('/ants', {success:function(data, status){
-          _.each(data, function(antId){
-              $.ajax('/status/ant/'+antId, { success:function(data, status){
-                ctx.fillStyle = "#000000";
-                console.log(data);
-                ctx.fillRect(data[0],data[1],cellSize, cellSize);
-              }});
-            });
-          }});
-        }
-        $(document).ready(function(){
-          $.ajax('/status/map', {success:function(data, status){
-            var mapWidth = data.dimension[0];
-            var mapHeight = data.dimension[1];
-            var canvas = $('<canvas>')
-            .attr("width",mapWidth)
-            .attr("height",mapHeight)
-            .appendTo('body')
-            [0];
-            var ctx = canvas.getContext("2d");
-
-            //background
-            ctx.fillStyle = "#339933";
-            ctx.fillRect(0,0,mapWidth*cellSize, mapHeight*cellSize);
-
-            //anthill
-            ctx.fillStyle = "#895a29";
-            ctx.fillRect(0,0,cellSize, cellSize);
-
-            //food
-            ctx.fillStyle = "#f14952";
-            _.each(data.food[0], function(food){
-              var x = food[0];
-              var y = food[1];
-              ctx.fillRect(x, y, cellSize, cellSize);
-            });
-            setInterval(function(){drawAnts(ctx)}, 100);
-
-          }});
-        });
-      </script>
-      </head>
-      <body>
-      </body>
-    </html>
-    """
-    req |> Request.reply(200, html )
-  end
-  # def handle("GET", %URI{path: "/js/jquery.js"}, req) do
-  #   headers = HTTProt.Headers.new()
-  #   |> HTTProt.Headers.put("content-type","application/javascript")
-  #   req |> Request.reply(200, headers,File.open!("./js/jquery.js") )
-  # end
-  def handle("GET", %URI{path: "/js/jquery.js"}, req) do
     headers = HTTProt.Headers.new()
-    |> HTTProt.Headers.put("content-type","application/javascript")
-    File.open "js/jquery.js",[:read], fn(file) ->
-      req |> Request.reply(200, headers, IO.read(file, :all))
+    |> HTTProt.Headers.put("content-type","text/html")
+
+    File.open "html/index.html", fn(file) ->
+      req |> Request.reply(200, headers, IO.read(file, :all) )
     end
   end
-  def handle("GET", %URI{path: "/js/lodash.js"}, req) do
+
+  def handle("GET", %URI{path: "/js/"<>jsfile}, req) do
     headers = HTTProt.Headers.new()
     |> HTTProt.Headers.put("content-type","application/javascript")
-    File.open "js/lodash.js",[:read], fn(file) ->
+    File.open "js/"<>jsfile,[:read], fn(file) ->
       req |> Request.reply(200, headers, IO.read(file, :all))
     end
   end
