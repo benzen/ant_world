@@ -3,7 +3,7 @@ defmodule AntWorld.World do
   use GenServer
 
   def start_link(_width, _height, food_position) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, [food_position] )
+    {:ok, pid} = GenServer.start_link(__MODULE__, food_position )
     pid
   end
 
@@ -45,8 +45,7 @@ defmodule AntWorld.World do
   end
 
   def handle_cast(_,ctx)do
-
-    IO.puts "Un handeled messges"
+    IO.puts "Unhandeled messges"
     {:noreply,ctx}
   end
 
