@@ -3,7 +3,7 @@ defmodule AntWorld.World do
   use GenServer
 
   def start_link(_width, _height, food_position) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, food_position )
+    {:ok, pid} = GenServer.start_link(__MODULE__, %{food_position: food_position, path_position: []} )
     pid
   end
 
@@ -19,28 +19,30 @@ defmodule AntWorld.World do
     {0,0}
   end
 
-  def handle_call(:state, _sender, food_position) do
+  def handle_call(:state, _sender, ctx) do
     resp = %{
       dimension: get_dimension(),
-      food: food_position,
+      food: ctx.food_position,
+      path: ctx.path_position,
       anthill: anthill()
     }
-    {:reply, resp, food_position}
+    {:reply, resp, ctx}
   end
 
-  def handle_cast({:walk, {_x,_y}, sender}, food_position) do
+  def handle_cast({:path, {x,y}, sender}, ctx) do
       send sender, :ok
-      {:noreply ,food_position}
+      {:noreply ,Dict.put( ctx, :path_position, [{x,y}|ctx.path_position])}
   end
 
-  def handle_cast({:snort, {x,y}, sender}, food_position) do
-    if Enum.member? food_position, {x,y} do
+  def handle_cast({:snort, {x,y}, sender}, ctx) do
+    if Enum.member? ctx.food_position, {x,y} do
         send sender, :food
-        new_food_position = List.delete food_position, {x,y}
-        {:noreply, new_food_position }
+        n_food_position = List.delete(ctx.food_position, {x,y})
+        n_ctx = Map.put( ctx, :path_position, n_food_position)
+        {:noreply, n_ctx }
     else
         send sender, :grass
-        {:noreply, food_position }
+        {:noreply, ctx }
     end
   end
 

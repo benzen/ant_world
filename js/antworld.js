@@ -26,6 +26,17 @@ var drawFood = function(ctx, foods){
   });
 
 };
+var drawPath = function(ctx, paths){
+  //path
+  ctx.fillStyle = "#666666";
+  _.each(paths, function(path){
+    var x = path[0];
+    var y = path[1];
+    ctx.fillRect(x, y, cellSize, cellSize);
+  });
+
+};
+
 var drawAnt = function(ctx, position){
   ctx.fillStyle = "#000000";
   // console.log(data);
@@ -52,8 +63,9 @@ $(document).ready(function(){
 
     drawMap(ctx, mapWidth, mapHeight);
     drawFood(ctx, data.food);
+    drawPath(ctx, data.path)
 
-    setInterval(function(){drawAnts(ctx)}, 1);
+    setInterval(function(){drawAnts(ctx)}, 0);
 
   }});
 });

@@ -1,7 +1,7 @@
 defmodule AntWorld do
 
   def start(_,_) do
-    ctx = AntWorld.Bootstrap.world_of_ants(1_000,1_000,10)
+    ctx = AntWorld.Bootstrap.world_of_ants(1_000,1_000,1)
     {:ok, pid} = Agent.start_link fn -> ctx end, name: :pids
     Cauldron.start Presenter, port: 4000
     {:ok, self}

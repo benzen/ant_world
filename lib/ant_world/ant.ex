@@ -27,15 +27,20 @@ defmodule AntWorld.Ant do
   end
 
   def go_home_with_one(ctx, {x,y}) do
-    IO.puts "FOOOOOOOD"
-    n_ctx = Dict.put ctx, :bag, [1|ctx.bag]
-    go_home n_ctx, {x,y}
+    IO.puts "founded FOOOOOOOD"
+    go_home Dict.put( ctx, :bag, [1|ctx.bag]), {x,y}
   end
   def go_home(ctx, {x,y}) do
     np = next_pos_to_home ctx, {x,y}
-    GenServer.cast ctx.world, {:walk, np, self}
-    nctx = Dict.put ctx, :position, np
-    loop(nctx)
+    cond do
+      np == ctx.anthill ->
+        IO.puts "Home sweet home #{inspect(self)}"
+        Agent.stop self()
+      true ->
+        GenServer.cast ctx.world, {:path, np, self}
+        nctx = Dict.put ctx, :position, np
+        loop(nctx)
+    end
   end
 
 
