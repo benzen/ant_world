@@ -13,18 +13,6 @@ defmodule AntWorld.World do
     pid
   end
 
-  # def get_state() do
-  #   GenServer.call(__MODULE__, :state)
-  # end
-  #
-  # def get_dimension() do
-  #   {1000, 1000}
-  # end
-  #
-  # def anthill() do #same as @home
-  #   {0,0}
-  # end
-
   def handle_call(:state, _sender, ctx) do
     {:reply, ctx, ctx}
   end
@@ -47,7 +35,7 @@ defmodule AntWorld.World do
   end
 
   def handle_cast(_,ctx)do
-    IO.puts "Unhandeled messges"
+    IO.puts "Unhandeled messages"
     {:noreply,ctx}
   end
 
