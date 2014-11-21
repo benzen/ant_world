@@ -1,48 +1,45 @@
 defmodule AntWorld.Ant do
 
-  def start_link(worldPid) do
-    dimension = AntWorld.World.get_dimension()
-    anthill = AntWorld.World.anthill()
-    ctx = %{world: worldPid, dimension: dimension, anthill: anthill, position: anthill, bag: []}
+  def start_link(world_pid) do
+    w_state = GenServer.call world_pid, :state
+    ctx = %{world: world_pid, dimension: w_state.dimension, anthill: w_state.anthill, position: w_state.anthill, bag: []}
     spawn_link( fn -> loop ctx end)
   end
 
   defp loop(ctx) do
-    position =  ctx.position
     receive do
-      :food  -> AntWorld.Ant.go_home_with_one ctx, position
-      :grass -> AntWorld.Ant.snort_else_where ctx, position
-      :ok    -> AntWorld.Ant.go_home ctx, position
+      :food  -> AntWorld.Ant.go_home_with_one ctx
+      :grass -> AntWorld.Ant.snort_else_where ctx
+      :ok    -> AntWorld.Ant.go_home ctx
       {:status, cb}->
-        cb.( nil, position)
+        cb.( nil, ctx.position)
         loop(ctx)
       end
   end
 
-  def snort_else_where(ctx, {x,y}) do
-    np = next_pos(ctx, {x,y})
+  def snort_else_where(ctx) do
+    np = next_pos(ctx)
     GenServer.cast ctx.world, {:snort, np, self}
     nctx = Dict.put ctx, :position, np
     loop(nctx)
   end
 
-  def go_home_with_one(ctx, {x,y}) do
-    IO.puts "founded FOOOOOOOD"
-    go_home Dict.put( ctx, :bag, [1|ctx.bag]), {x,y}
+  def go_home_with_one(ctx) do
+    go_home Dict.put( ctx, :bag, [1|ctx.bag])
   end
-  def go_home(ctx, {x,y}) do
-    np = next_pos_to_home ctx, {x,y}
+
+  def go_home(ctx) do
+    np = next_pos_to_home ctx
     cond do
       np == ctx.anthill ->
         IO.puts "Home sweet home #{inspect(self)}"
-        Agent.stop self()
+        exit(:normal)
       true ->
         GenServer.cast ctx.world, {:path, np, self}
         nctx = Dict.put ctx, :position, np
         loop(nctx)
     end
   end
-
 
   def moves({x,y}) do
     [ { x+1,y   },
@@ -51,17 +48,18 @@ defmodule AntWorld.Ant do
       { x  ,y-1 }]
   end
 
-  def next_pos( ctx, {x,y} ) do
-    moves({x,y})
-    |> Enum.filter( &( is_in_bound(ctx, &1)))
+  def next_pos( ctx ) do
+    :random.seed(:os.timestamp)
+    moves(ctx.position)
+    |> Enum.filter( &( is_in_bound(ctx.dimension, &1)))
     |> Enum.shuffle()
-    |> List.first
+    |> List.first()
   end
 
-  def next_pos_to_home( ctx, {x, y}) do
+  def next_pos_to_home(ctx) do
     {tx, ty} = ctx.anthill
-    moves({x,y})
-    |> Enum.filter( &(is_in_bound(ctx, &1)))
+    moves(ctx.position)
+    |> Enum.filter( &(is_in_bound(ctx.dimension, &1)))
     |> Enum.sort_by( &(distance( {tx,ty}, &1)) )
     |> List.first
   end
@@ -72,11 +70,10 @@ defmodule AntWorld.Ant do
      :math.sqrt(x+y)
   end
 
-  def is_in_bound(ctx, {x, y}) do
-    {width, height} = ctx.dimension
-    x >= 0 and
-    y >= 0 and
-    x < width and
+  def is_in_bound({width, height}, {x, y}) do
+    x >= 0     and
+    y >= 0     and
+    x < width  and
     y < height
   end
 
