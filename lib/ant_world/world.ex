@@ -2,31 +2,31 @@ defmodule AntWorld.World do
 
   use GenServer
 
-  def start_link(_width, _height, food_position) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, %{food_position: food_position, path_position: []} )
+  def start_link(width, height, food_position) do
+    ctx = %{
+      food_position: food_position,
+      path_position: [],
+      anthill: {0, 0},
+      dimension: {width, height}
+    }
+    {:ok, pid} = GenServer.start_link(__MODULE__, ctx )
     pid
   end
 
   # def get_state() do
   #   GenServer.call(__MODULE__, :state)
   # end
-
-  def get_dimension() do
-    {1000, 1000}
-  end
-
-  def anthill() do #same as @home
-    {0,0}
-  end
+  #
+  # def get_dimension() do
+  #   {1000, 1000}
+  # end
+  #
+  # def anthill() do #same as @home
+  #   {0,0}
+  # end
 
   def handle_call(:state, _sender, ctx) do
-    resp = %{
-      dimension: get_dimension(),
-      food: ctx.food_position,
-      path: ctx.path_position,
-      anthill: anthill()
-    }
-    {:reply, resp, ctx}
+    {:reply, ctx, ctx}
   end
 
   def handle_cast({:path, {x,y}, sender}, ctx) do
